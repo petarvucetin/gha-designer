@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { pickViewerKind, shouldReconcile, type FileResult } from './fsStore';
+import { pickViewerKind, shouldReconcile, useFs, type FileResult } from './fsStore';
+import { useEditor } from './store';
+import { hashText } from './model/hash';
 import type { WorkflowDoc } from './model/types';
 
 const res = (over: Partial<FileResult>): FileResult => ({ path: 'x', size: 3, mtimeMs: 1, binary: false, ...over });
@@ -55,6 +57,49 @@ function stubEventSource() {
     close() {}
   });
 }
+
+describe('saveActive (comment-preserving save)', () => {
+  const ORIG = `# CI pipeline for the widget service
+name: CI
+on:
+  push:
+    branches: [main] # trunk only
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # pinned for provenance (see SEC-142)
+      - uses: actions/checkout@v4
+      - run: npm test
+`;
+
+  it('PUTs updateYaml-reconciled content (preserving comments) and rebinds diskHash to what was written', async () => {
+    useEditor.getState().openFromFile('R', 'workflows/ci.yml', ORIG, 100);
+    const docId = useEditor.getState().activeId;
+    useFs.setState({ folder: { input: 'R', root: 'R', entries: [], truncated: false, status: 'open' } });
+    useEditor.getState().updateMeta({ name: 'CI2' });
+
+    let putBody: { root: string; path: string; content: string } | null = null;
+    vi.stubGlobal('fetch', vi.fn((_url: string, init?: { method?: string; body?: string }) => {
+      if (init?.method === 'PUT') {
+        putBody = JSON.parse(init.body ?? '{}');
+        return Promise.resolve({ ok: true, json: async () => ({ mtimeMs: 999 }) });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    }));
+
+    await useFs.getState().saveActive();
+
+    expect(putBody).not.toBeNull();
+    expect(putBody!.content).toContain('# pinned for provenance (see SEC-142)');
+    expect(putBody!.content).toContain('name: CI2');
+
+    const doc = useEditor.getState().workflows.find((w) => w.id === docId)!;
+    expect(doc.source!.diskHash).toBe(hashText(putBody!.content));
+
+    vi.unstubAllGlobals();
+  });
+});
 
 describe('openFolder concurrency', () => {
   it('a later openFolder call wins even when the earlier call resolves last (out of order)', async () => {

@@ -46,7 +46,7 @@ interface EditorState {
   composeStorage(): StorageV2;
   openFromFile(root: string, path: string, fileText: string, mtimeMs: number): void;
   applyDiskChange(docId: string, fileText: string | null, mtimeMs: number): void;
-  bindSaved(docId: string, canonicalText: string, mtimeMs: number): void;
+  bindSaved(docId: string, canonicalText: string, writtenText: string, mtimeMs: number): void;
 }
 
 function uniqueJobId(nodes: FlowNode[], wanted: string): string {
@@ -352,7 +352,7 @@ export const useEditor = create<EditorState>((set, get) => {
           source: { root, path, diskHash: hashText(fileText) },
           sourceRt: {
             baseline: toYaml(snap), conflict: false, detached: false, mtimeMs,
-            hadComments: /^\s*#/m.test(fileText),
+            diskText: fileText,
           },
         };
         return {
@@ -384,7 +384,7 @@ export const useEditor = create<EditorState>((set, get) => {
         };
       }),
 
-    bindSaved: (docId, canonicalText, mtimeMs) =>
+    bindSaved: (docId, canonicalText, writtenText, mtimeMs) =>
       set((s) => {
         const checkpointed = checkpoint(s);
         const idx = checkpointed.findIndex((w) => w.id === docId);
@@ -393,8 +393,11 @@ export const useEditor = create<EditorState>((set, get) => {
         if (!doc.source || !doc.sourceRt) return {};
         const updated: WorkflowDoc = {
           ...doc,
-          source: { ...doc.source, diskHash: hashText(canonicalText) },
-          sourceRt: { ...doc.sourceRt, baseline: canonicalText, conflict: false, detached: false, mtimeMs, hadComments: false },
+          source: { ...doc.source, diskHash: hashText(writtenText) },
+          sourceRt: {
+            ...doc.sourceRt, baseline: canonicalText, conflict: false, detached: false, mtimeMs,
+            diskText: writtenText,
+          },
         };
         return { workflows: checkpointed.map((w, i) => (i === idx ? updated : w)) };
       }),

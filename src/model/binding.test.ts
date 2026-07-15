@@ -6,7 +6,7 @@ const base: WorkflowDoc = { id: 'i', fileName: 'ci.yml', meta: { name: 'x' }, no
 const bound = (over: Partial<NonNullable<WorkflowDoc['sourceRt']>> = {}): WorkflowDoc => ({
   ...base,
   source: { root: 'R', path: 'workflows/ci.yml', diskHash: 'h' },
-  sourceRt: { baseline: 'BASE', conflict: false, detached: false, mtimeMs: 1, hadComments: false, ...over },
+  sourceRt: { baseline: 'BASE', conflict: false, detached: false, mtimeMs: 1, diskText: 'BASE', ...over },
 });
 
 describe('deriveMarker', () => {

@@ -26,7 +26,7 @@ against Docker, Podman, or a full Ubuntu VM, without pushing to GitHub first.
 ## Status / known limitations
 
 - **Windows-first.** Developed and packaged on Windows 11; other platforms are untested. CI (`.github/workflows/ci.yml`) accordingly runs only on `windows-latest` — the test suite hard-codes Windows path semantics (e.g. `C:\...` absolute-path detection, `where`/`.exe` engine lookups) that don't hold on Linux.
-- **Comment loss on save.** A bound workflow file is re-emitted as canonical YAML, so hand-written comments in `.github/workflows/*.yml` are not preserved across a save.
+- **Comment preservation on save.** Sections you don't change keep their comments and ordering; heavily edited or reordered step lists may lose per-step comments or shift them onto a neighboring step.
 - **One run at a time.** Starting a new run while one is active either fails (409) or cancels the in-flight run, depending on the request.
 - **`uses:` actions are fetched live.** Marketplace actions referenced in a workflow are resolved from github.com at run time by `act`, not vendored.
 

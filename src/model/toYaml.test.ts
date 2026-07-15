@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { parse } from 'yaml';
-import { toYaml } from './toYaml';
+import { parse, stringify } from 'yaml';
+import { buildDoc, toYaml } from './toYaml';
 import type { GraphSnapshot } from './types';
 
 function snap(partial: Partial<GraphSnapshot>): GraphSnapshot {
@@ -95,4 +95,9 @@ describe('toYaml', () => {
     expect(s1).toEqual({ name: 'Checkout', uses: 'actions/checkout@v4', with: { 'fetch-depth': '0' } });
     expect(s2).toEqual({ name: 'Test', run: 'npm test', 'working-directory': 'app', shell: 'bash', if: 'success()' });
   });
+});
+
+it('buildDoc is the exact object toYaml stringifies', () => {
+  const s = snap({ meta: { name: 'CI' } });
+  expect(stringify(buildDoc(s), { indent: 2 })).toBe(toYaml(s));
 });

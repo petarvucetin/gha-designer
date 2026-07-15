@@ -35,19 +35,20 @@ function reinitSourceRt(
   const current = toYaml({ meta: doc.meta, nodes: doc.nodes, edges: doc.edges });
   if (fileText === null) {
     // bound file is gone on disk — detached, baseline = the canvas we still hold
-    return { kind: 'flags', doc: { ...doc, sourceRt: { baseline: current, conflict: false, detached: true, mtimeMs, hadComments: false } } };
+    // no disk text to read (file gone) — fall back to the canvas, same as baseline above
+    return { kind: 'flags', doc: { ...doc, sourceRt: { baseline: current, conflict: false, detached: true, mtimeMs, diskText: current } } };
   }
   const newHash = hashText(fileText);
   let baseline: string;
   try { baseline = toYaml(fromYaml(fileText)); }
   catch {
     // disk became unparseable while offline — keep the canvas, flag conflict
-    return { kind: 'flags', doc: { ...doc, source: { ...src, diskHash: newHash }, sourceRt: { baseline: current, conflict: true, detached: false, mtimeMs, hadComments: false } } };
+    return { kind: 'flags', doc: { ...doc, source: { ...src, diskHash: newHash }, sourceRt: { baseline: current, conflict: true, detached: false, mtimeMs, diskText: fileText } } };
   }
   const conflict = newHash !== src.diskHash && current !== baseline; // offline external edit vs a diverging canvas
   return {
     kind: 'flags',
-    doc: { ...doc, source: { ...src, diskHash: newHash }, sourceRt: { baseline, conflict, detached: false, mtimeMs, hadComments: /^\s*#/m.test(fileText) } },
+    doc: { ...doc, source: { ...src, diskHash: newHash }, sourceRt: { baseline, conflict, detached: false, mtimeMs, diskText: fileText } },
   };
 }
 
@@ -66,21 +67,21 @@ export function diskChangeDoc(doc: WorkflowDoc, fileText: string | null, mtimeMs
     // text now matches baseline — a duplicate event for still-conflicting content must not
     // silently clear the flag while the canvas still diverges from baseline.
     const conflict = rt.conflict && fileText !== rt.baseline;
-    return { kind: 'flags', doc: { ...doc, sourceRt: { ...rt, detached: false, conflict, mtimeMs } } };
+    return { kind: 'flags', doc: { ...doc, sourceRt: { ...rt, detached: false, conflict, mtimeMs, diskText: fileText } } };
   }
   const current = toYaml({ meta: doc.meta, nodes: doc.nodes, edges: doc.edges });
   const dirty = current !== rt.baseline;
   if (dirty) {
     return {
       kind: 'flags',
-      doc: { ...doc, source: { ...src, diskHash: newHash }, sourceRt: { ...rt, conflict: true, detached: false, mtimeMs } },
+      doc: { ...doc, source: { ...src, diskHash: newHash }, sourceRt: { ...rt, conflict: true, detached: false, mtimeMs, diskText: fileText } },
     };
   }
   let snap;
   try { snap = fromYaml(fileText); } catch {
     return {
       kind: 'flags',
-      doc: { ...doc, source: { ...src, diskHash: newHash }, sourceRt: { ...rt, conflict: true, detached: false, mtimeMs } },
+      doc: { ...doc, source: { ...src, diskHash: newHash }, sourceRt: { ...rt, conflict: true, detached: false, mtimeMs, diskText: fileText } },
     };
   }
   const laidOut = layoutGraph(snap.nodes, snap.edges);
@@ -90,7 +91,7 @@ export function diskChangeDoc(doc: WorkflowDoc, fileText: string | null, mtimeMs
     doc: {
       ...doc, meta: snap.meta, nodes, edges: snap.edges,
       source: { ...src, diskHash: newHash },
-      sourceRt: { ...rt, baseline: toYaml(snap), conflict: false, detached: false, mtimeMs },
+      sourceRt: { ...rt, baseline: toYaml(snap), conflict: false, detached: false, mtimeMs, diskText: fileText },
     },
     identityChanged,
   };

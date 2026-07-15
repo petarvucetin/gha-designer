@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { WorkflowDoc } from './model/types';
 import { toYaml } from './model/toYaml';
 import { fromYaml } from './model/fromYaml';
+import { updateYaml } from './model/updateYaml';
 import { useEditor } from './store';
 import { API_BASE } from './lib/apiBase';
 
@@ -181,6 +182,10 @@ export const useFs = create<FsState>((set, get) => ({
     savingDocs.add(docId);
     const { root, path } = doc.source;
     const canonical = toYaml(editor.snapshot());
+    // Comment-preserving save: reconcile the edited snapshot onto the last-known disk text
+    // so untouched sections keep their comments/formatting. Falls back to canonical when
+    // there's no disk text to reconcile onto (updateYaml itself falls back on unparseable text).
+    const content = doc.sourceRt.diskText ? updateYaml(doc.sourceRt.diskText, editor.snapshot()) : canonical;
     // Route through the same chain as reconcile/batch application: a second save for a
     // different doc still queues behind this one, and (via the guard above) a second save
     // for the SAME doc can't be queued at all — both needed so bindSaved calls always land
@@ -189,7 +194,7 @@ export const useFs = create<FsState>((set, get) => ({
       try {
         const res = await fetch(api('/fs/file'), {
           method: 'PUT', headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ root, path, content: canonical }),
+          body: JSON.stringify({ root, path, content }),
         });
         if (!res.ok) {
           const msg = ((await res.json().catch(() => ({}))) as { error?: string }).error ?? `Save failed (${res.status}).`;
@@ -197,7 +202,7 @@ export const useFs = create<FsState>((set, get) => ({
           return;
         }
         const { mtimeMs } = (await res.json()) as { mtimeMs: number };
-        useEditor.getState().bindSaved(docId, canonical, mtimeMs);
+        useEditor.getState().bindSaved(docId, canonical, content, mtimeMs);
         set({ saveError: undefined });
       } catch {
         set({ saveError: 'Runner server is not reachable.' });

@@ -132,7 +132,7 @@ export type WorkflowDoc = {
   nodes: GraphNode[];
   edges: GraphEdge[];
   source?: { root: string; path: string; diskHash: string };
-  sourceRt?: { baseline: string; conflict: boolean; detached: boolean; mtimeMs: number; hadComments: boolean };
+  sourceRt?: { baseline: string; conflict: boolean; detached: boolean; mtimeMs: number; diskText: string };
 };
 
 export interface Problem {

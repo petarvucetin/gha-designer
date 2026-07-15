@@ -12,7 +12,7 @@ function boundDoc(text: string, over: Partial<NonNullable<WorkflowDoc['sourceRt'
   return {
     id: 'w1', fileName: 'ci.yml', meta: snap.meta, nodes: snap.nodes, edges: snap.edges,
     source: { root: 'R', path: 'workflows/ci.yml', diskHash: hashText(text) },
-    sourceRt: { baseline: toYaml(snap), conflict: false, detached: false, mtimeMs: 100, hadComments: false, ...over },
+    sourceRt: { baseline: toYaml(snap), conflict: false, detached: false, mtimeMs: 100, diskText: text, ...over },
   };
 }
 
@@ -35,6 +35,7 @@ describe('diskChangeDoc reboot reconcile (source present, sourceRt stripped)', (
     expect(r.doc.sourceRt!.conflict).toBe(false);
     expect(r.doc.sourceRt!.baseline).toBe(toYaml(fromYaml(CI)));
     expect(r.doc.sourceRt!.mtimeMs).toBe(200);
+    expect(r.doc.sourceRt!.diskText).toBe(CI);
   });
 
   it('flags a conflict when the disk changed offline and the canvas diverges', () => {
@@ -47,6 +48,7 @@ describe('diskChangeDoc reboot reconcile (source present, sourceRt stripped)', (
     if (r.kind !== 'flags') return;
     expect(r.doc.sourceRt!.conflict).toBe(true);
     expect(r.doc.source!.diskHash).toBe(hashText(changedDisk));
+    expect(r.doc.sourceRt!.diskText).toBe(changedDisk);
   });
 
   it('marks detached when the bound file is gone on reboot', () => {
@@ -54,6 +56,9 @@ describe('diskChangeDoc reboot reconcile (source present, sourceRt stripped)', (
     expect(r.kind).toBe('flags');
     if (r.kind !== 'flags') return;
     expect(r.doc.sourceRt!.detached).toBe(true);
+    // no disk text exists: diskText falls back to the canvas-canonical YAML, same as baseline
+    expect(r.doc.sourceRt!.diskText).toBe(toYaml(fromYaml(CI)));
+    expect(r.doc.sourceRt!.diskText).toBe(r.doc.sourceRt!.baseline);
   });
 
   it('an unbound doc (no source) is still a no-op', () => {
@@ -84,7 +89,11 @@ describe('diskChangeDoc', () => {
   it('ROW null: marks detached, keeps the canvas', () => {
     const r = diskChangeDoc(boundDoc(CI), null, 200);
     expect(r).toMatchObject({ kind: 'flags' });
-    if (r.kind === 'flags') expect(r.doc.sourceRt!.detached).toBe(true);
+    if (r.kind === 'flags') {
+      expect(r.doc.sourceRt!.detached).toBe(true);
+      // spread path (...rt): the last-known disk text is carried forward unchanged
+      expect(r.doc.sourceRt!.diskText).toBe(CI);
+    }
   });
   it('ROW echo: identical-recreate clears detached+conflict and bumps mtime', () => {
     // baseline overridden to literally equal the incoming text: a genuine no-divergence echo.
@@ -94,6 +103,7 @@ describe('diskChangeDoc', () => {
       expect(r.doc.sourceRt!.detached).toBe(false);
       expect(r.doc.sourceRt!.conflict).toBe(false);
       expect(r.doc.sourceRt!.mtimeMs).toBe(300);
+      expect(r.doc.sourceRt!.diskText).toBe(CI);
     }
   });
   it('ROW echo: duplicate event for still-conflicting content keeps conflict flagged', () => {
@@ -105,6 +115,7 @@ describe('diskChangeDoc', () => {
     if (first.kind !== 'flags') throw new Error('expected flags');
     expect(first.doc.sourceRt!.conflict).toBe(true);
     expect(first.doc.source!.diskHash).toBe(hashText(changed));
+    expect(first.doc.sourceRt!.diskText).toBe(changed);
     // duplicate fs event: same fileText, same diskHash, later mtime — content still diverges from baseline.
     const second = diskChangeDoc(first.doc, changed, 300);
     expect(second).toMatchObject({ kind: 'flags' });
@@ -112,6 +123,7 @@ describe('diskChangeDoc', () => {
       expect(second.doc.sourceRt!.conflict).toBe(true);
       expect(second.doc.sourceRt!.detached).toBe(false);
       expect(second.doc.sourceRt!.mtimeMs).toBe(300);
+      expect(second.doc.sourceRt!.diskText).toBe(changed);
     }
   });
   it('ROW echo: disk reverted to baseline clears conflict', () => {
@@ -124,17 +136,20 @@ describe('diskChangeDoc', () => {
       expect(r.doc.sourceRt!.conflict).toBe(false);
       expect(r.doc.sourceRt!.detached).toBe(false);
       expect(r.doc.sourceRt!.mtimeMs).toBe(300);
+      expect(r.doc.sourceRt!.diskText).toBe(baseline);
     }
   });
   it('ROW clean data-only: reloads, keeps surviving positions, identityChanged=false', () => {
     const doc = boundDoc(CI);
     const moved = { ...doc, nodes: doc.nodes.map((n) => (n.id === 'job:build' ? { ...n, position: { x: 999, y: 888 } } : n)) };
-    const r = diskChangeDoc(moved, CI.replace('run: ls', 'run: echo hi'), 200);
+    const changed = CI.replace('run: ls', 'run: echo hi');
+    const r = diskChangeDoc(moved, changed, 200);
     expect(r.kind).toBe('reload');
     if (r.kind === 'reload') {
       expect(r.identityChanged).toBe(false);
       expect(r.doc.nodes.find((n) => n.id === 'job:build')!.position).toEqual({ x: 999, y: 888 });
       expect(r.doc.sourceRt!.mtimeMs).toBe(200);
+      expect(r.doc.sourceRt!.diskText).toBe(changed);
     }
   });
   it('ROW clean identity-change: lays out genuinely new nodes, identityChanged=true', () => {
@@ -144,6 +159,7 @@ describe('diskChangeDoc', () => {
     if (r.kind === 'reload') {
       expect(r.identityChanged).toBe(true);
       expect(r.doc.nodes.some((n) => n.id === 'job:test')).toBe(true);
+      expect(r.doc.sourceRt!.diskText).toBe(withTest);
     }
   });
   it('ROW dirty: conflict, keeps edits, records new diskHash', () => {
@@ -156,11 +172,16 @@ describe('diskChangeDoc', () => {
     if (r.kind === 'flags') {
       expect(r.doc.sourceRt!.conflict).toBe(true);
       expect(r.doc.source!.diskHash).toBe(hashText(changed));
+      expect(r.doc.sourceRt!.diskText).toBe(changed);
     }
   });
   it('ROW reparse-fail: clean tab but unparseable disk text → conflict, canvas kept', () => {
-    const r = diskChangeDoc(boundDoc(CI), 'name: [oops\n', 200);
+    const badText = 'name: [oops\n';
+    const r = diskChangeDoc(boundDoc(CI), badText, 200);
     expect(r).toMatchObject({ kind: 'flags' });
-    if (r.kind === 'flags') expect(r.doc.sourceRt!.conflict).toBe(true);
+    if (r.kind === 'flags') {
+      expect(r.doc.sourceRt!.conflict).toBe(true);
+      expect(r.doc.sourceRt!.diskText).toBe(badText);
+    }
   });
 });

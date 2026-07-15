@@ -89,28 +89,15 @@ export default function Toolbar() {
   const folderRoot = useFs((s) => (s.folder?.status === 'open' ? s.folder.root : null));
   const saveActive = useFs((s) => s.saveActive);
   const saveError = useFs((s) => s.saveError);
-  const [armedSave, setArmedSave] = useState<string | null>(null);
-  const armedSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hasSource = !!activeDoc?.source;
   const mk = activeDoc
     ? deriveMarker(activeDoc, folderRoot, toYaml(useEditor.getState().snapshot()))
     : { bound: false, live: false, marker: '' as const };
   const saveEnabled = mk.live && (mk.marker === '●' || mk.marker === '⚠' || mk.marker === '✂');
-  const hadComments = !!activeDoc?.sourceRt?.hadComments;
 
   const doSave = () => {
     if (!saveEnabled || !activeDoc) return;
-    const docId = activeDoc.id;
-    if (hadComments && armedSave !== docId) {
-      if (armedSaveTimeout.current) clearTimeout(armedSaveTimeout.current);
-      setArmedSave(docId);
-      armedSaveTimeout.current = setTimeout(() => {
-        setArmedSave((a) => (a === docId ? null : a));
-      }, 2500);
-      return;
-    }
-    setArmedSave(null);
     void saveActive();
   };
 
@@ -124,11 +111,8 @@ export default function Toolbar() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saveEnabled, hadComments, armedSave, saveActive, activeDoc?.id]);
+  }, [saveEnabled, saveActive, activeDoc?.id]);
 
-  useEffect(() => () => {
-    if (armedSaveTimeout.current) clearTimeout(armedSaveTimeout.current);
-  }, []);
   void liveNodes; void liveEdges; void liveMeta; // referenced to force marker recompute
 
   const onClear = () => {
@@ -165,7 +149,7 @@ export default function Toolbar() {
             ? (saveEnabled ? 'Save to disk (Ctrl+S)' : 'No changes to save')
             : `Unlinked — reopen ${activeDoc?.source?.path ?? 'the folder'} to save`}
           onClick={doSave}>
-          {armedSave === activeDoc?.id ? 'save (drops comments)?' : 'save'}
+          save
         </button>
       )}
       {saveError && <span className="save-error" title={saveError}>{saveError}</span>}

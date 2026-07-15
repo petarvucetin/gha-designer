@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEditor } from './store';
+import { hashText } from './model/hash';
 
 // zustand stores work without React; call actions via useEditor.getState().
 
@@ -557,6 +558,7 @@ describe('folder-mode binding', () => {
     expect(s.activeFileName).toBe('ci.yml');
     expect(doc.source).toMatchObject({ root: 'R', path: 'workflows/ci.yml' });
     expect(doc.sourceRt?.baseline).toContain('build');
+    expect(doc.sourceRt?.diskText).toBe(CI);
     expect(s.nodes.some((n) => n.id === 'job:build')).toBe(true);
   });
 
@@ -580,10 +582,23 @@ describe('folder-mode binding', () => {
     const id = useEditor.getState().activeId;
     useEditor.getState().applyDiskChange(id, null, 200);
     expect(useEditor.getState().workflows.find((w) => w.id === id)?.sourceRt?.detached).toBe(true);
-    useEditor.getState().bindSaved(id, 'name: CI\non: push\njobs: {}\n', 300);
+    const canonical = 'name: CI\non: push\njobs: {}\n';
+    useEditor.getState().bindSaved(id, canonical, canonical, 300);
     const rt = useEditor.getState().workflows.find((w) => w.id === id)?.sourceRt;
     expect(rt?.detached).toBe(false);
     expect(rt?.baseline).toContain('jobs');
+  });
+
+  it('bindSaved records the actual written bytes, keeping baseline as the canonical text', () => {
+    useEditor.getState().openFromFile('R', 'workflows/ci.yml', CI, 100);
+    const id = useEditor.getState().activeId;
+    const canonical = 'name: CI\non: push\njobs: {}\n';
+    const written = '# preserved comment\n' + canonical;
+    useEditor.getState().bindSaved(id, canonical, written, 300);
+    const doc = useEditor.getState().workflows.find((w) => w.id === id)!;
+    expect(doc.source?.diskHash).toBe(hashText(written));
+    expect(doc.sourceRt?.diskText).toBe(written);
+    expect(doc.sourceRt?.baseline).toBe(canonical);
   });
 
   it('reset clears the binding', () => {

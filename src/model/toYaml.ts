@@ -83,7 +83,7 @@ function stepToYaml(s: Step): Record<string, unknown> {
   return out;
 }
 
-export function toYaml(snapshot: GraphSnapshot): string {
+export function buildDoc(snapshot: GraphSnapshot): Record<string, unknown> {
   const { meta, nodes, edges } = snapshot;
 
   const on: Record<string, unknown> = {};
@@ -154,5 +154,9 @@ export function toYaml(snapshot: GraphSnapshot): string {
   if (meta.concurrency) doc.concurrency = concurrencyToYaml(meta.concurrency);
   if (meta.defaults) doc.defaults = defaultsToYaml(meta.defaults);
   doc.jobs = jobs;
-  return stringify(doc, { indent: 2 });
+  return doc;
+}
+
+export function toYaml(snapshot: GraphSnapshot): string {
+  return stringify(buildDoc(snapshot), { indent: 2 });
 }
