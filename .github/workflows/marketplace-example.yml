@@ -1,7 +1,8 @@
 # Example: a workflow that uses GitHub Marketplace actions, runnable locally.
 #
 # Run it in the Designer with the VM engine:
-#   open this repo folder → click a step badge / Run ▶ → engine: VM → mode: self-hosted → start
+#   open this repo folder → click a step badge / Run ▶ → engine: VM → mode: self-hosted
+#   → event: workflow_dispatch → start
 # act fetches each `uses:` action from github.com, then builds/runs it on the VM:
 #   - actions/checkout          (JavaScript action — checks the repo into the workspace)
 #   - actions/setup-node        (JavaScript action — installs/pins the requested Node)
@@ -11,7 +12,9 @@
 # Docker-based actions (like the greet job) run cleanly in *self-hosted* mode, where act uses the
 # VM's Docker directly. (In container mode they'd need Docker-in-Docker.)
 name: marketplace-example
-on: [push, workflow_dispatch]
+# workflow_dispatch only: this is a sample for local runs in the Designer,
+# not part of this repo's CI (push would run it on every commit on GitHub).
+on: [workflow_dispatch]
 
 jobs:
   build:

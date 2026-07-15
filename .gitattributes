@@ -1,0 +1,10 @@
+# Files whose consumers require LF regardless of the cloner's core.autocrlf:
+# bash scripts executed on the Linux VM / in containers, and cloud-init documents.
+# (GitHub windows-latest runners check out with autocrlf=true; CRLF breaks these.)
+*.sh text eol=lf
+vm/cloud-init/user-data text eol=lf
+vm/cloud-init/meta-data text eol=lf
+vm/packer/http/user-data text eol=lf
+vm/packer/http/meta-data text eol=lf
+runner-image/Containerfile text eol=lf
+runner-image/Containerfile.alpine text eol=lf
