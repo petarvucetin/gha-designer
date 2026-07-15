@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.1.0"
+version = "0.1.1"
 description = "Visual designer and local runner for GitHub Actions workflows"
 authors = ["Station 5 Solutions"]
 license = "MIT"
