@@ -1,0 +1,18 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US.UTF-8
+  keyboard: { layout: us }
+  identity:
+    hostname: gha-runner-build
+    username: runner
+    # SHA-512 crypt hash of "runner" (generated via passlib sha512_crypt); matches ssh_password.
+    password: "$6$6DBi0BIjOKXnAZou$AdKcl27/HuSgy2iJbARlGA6iOVXpDdEH5B7o4QCyJIkUrhqi4FXYOj9mi6oPLZWQeIx5NGwk9uR10QtIV.9L6."
+  ssh:
+    install-server: true
+    allow-pw: true
+  storage:
+    layout: { name: direct }
+  packages: [openssh-server]
+  late-commands:
+    - "echo 'runner ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/90-runner"

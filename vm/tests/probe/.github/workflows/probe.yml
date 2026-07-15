@@ -1,0 +1,10 @@
+name: probe
+on: [push]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "MARKER_OK"
+      - run: node --version
+      - run: git --version
+      - run: bash -c 'echo shell ok'

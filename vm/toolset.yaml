@@ -1,0 +1,28 @@
+# vm/toolset.yaml
+# Single source of truth for the runner toolset. Consumed by:
+#   - vm/provision/install-toolset.sh  (installs onto the VM OS for -self-hosted mode)
+#   - runner-image/ container build     (container mode; wired in Phase 3)
+# Practical subset: setup-* actions still pin exact tool versions at runtime,
+# so this covers the vast majority of real workflows. Extend by editing this file.
+apt:
+  - git
+  - curl
+  - wget
+  - jq
+  - unzip
+  - zip
+  - xz-utils
+  - build-essential
+  - ca-certificates
+  - openssh-client
+  - sudo
+  - coreutils
+tools:
+  node:
+    version: "20"
+  python:
+    version: "3.12"
+  gh: latest
+  docker: true   # docker-ce + buildx + compose plugin
+act:
+  version: "0.2.89"

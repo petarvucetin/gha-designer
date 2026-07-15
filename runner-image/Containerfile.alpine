@@ -1,0 +1,41 @@
+# Alpine variant of the local act runner image (~important caveats — read below).
+#
+# Alpine is tempting because it's tiny, but it is the awkward case for nektos/act:
+#   * act runs every `run:` step with `bash -e`, and Alpine ships only busybox `sh` —
+#     without bash, every shell step fails with "bash: not found". So bash is mandatory.
+#   * Alpine is musl libc, not glibc. Pure-JavaScript actions (actions/checkout, etc.)
+#     run fine on the musl `nodejs` package, but any action that downloads a *prebuilt
+#     glibc binary* will fail with "not found" on musl. `gcompat` is a glibc shim that
+#     makes many (not all) of those work.
+#   * busybox coreutils differ from GNU (fewer flags); `coreutils` restores GNU behavior
+#     that some scripts assume.
+#
+# Net: an Alpine act runner works, but only once you add bash + nodejs + the compat
+# packages below. It is not meaningfully smaller than the Debian-slim image once you do.
+FROM alpine:3.20
+
+RUN apk add --no-cache \
+        bash \
+        nodejs \
+        npm \
+        git \
+        coreutils \
+        curl \
+        wget \
+        jq \
+        unzip \
+        zip \
+        tar \
+        xz \
+        sudo \
+        openssh-client \
+        libstdc++ \
+        gcompat
+
+ENV LANG=C.UTF-8 \
+    ACT=true
+
+# Fail the build early if the essentials aren't on PATH.
+RUN node --version && git --version && bash -c 'echo shell ok'
+
+CMD ["bash"]

@@ -1,0 +1,7 @@
+{"job":"call-it  ","jobID":"call-it","level":"info","matrix":{},"msg":"⭐ Run Set up job","step":"Set up job","stepid":["--setup-job"],"time":"2026-07-07T03:00:00-07:00"}
+{"job":"call-it/callonly/inner","jobID":"inner","level":"info","matrix":{},"msg":"⭐ Run Main echo","stage":"Main","step":"echo","stepID":["0"],"time":"2026-07-07T03:00:01-07:00"}
+{"job":"call-it/callonly/inner","jobID":"inner","jobResult":"success","level":"info","matrix":{},"msg":"🏁  Job succeeded","time":"2026-07-07T03:00:02-07:00"}
+{"job":"caller/matrixy-1","jobID":"matrixy","level":"info","matrix":{"node":18},"msg":"⭐ Run Main t","stage":"Main","step":"t","stepID":["0"],"time":"2026-07-07T03:00:03-07:00"}
+{"job":"caller/matrixy-2","jobID":"matrixy","level":"info","matrix":{"node":20},"msg":"⭐ Run Main t","stage":"Main","step":"t","stepID":["0"],"time":"2026-07-07T03:00:03-07:00"}
+{"job":"caller/matrixy-1","jobID":"matrixy","jobResult":"failure","level":"error","matrix":{"node":18},"msg":"🏁  Job failed","time":"2026-07-07T03:00:04-07:00"}
+{"job":"caller/matrixy-2","jobID":"matrixy","jobResult":"success","level":"info","matrix":{"node":20},"msg":"🏁  Job succeeded","time":"2026-07-07T03:00:05-07:00"}

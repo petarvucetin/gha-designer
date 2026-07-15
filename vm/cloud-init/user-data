@@ -1,0 +1,11 @@
+#cloud-config
+ssh_pwauth: false
+users:
+  - name: runner
+    groups: [sudo]
+    shell: /bin/bash
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    ssh_authorized_keys:
+      - "__SSH_PUBKEY__"
+ssh:
+  emit_keys_to_console: false

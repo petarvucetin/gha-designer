@@ -1,0 +1,34 @@
+# Minimal local runner image for nektos/act — a lightweight alternative to the
+# ~1.6 GB catthehacker/ubuntu:act-latest image.
+#
+# Base: node:20-bookworm-slim. Node.js is the single hard requirement for a usable
+# act runner (actions/checkout and virtually every marketplace "JavaScript action"
+# execute on node), and the base is Debian bookworm, so `apt-get` works exactly like
+# it does under catthehacker's Ubuntu — steps that install packages still work.
+FROM node:20-bookworm-slim
+
+# Tools GitHub Actions and ordinary `run:` steps commonly assume are present.
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        git \
+        ca-certificates \
+        curl \
+        wget \
+        jq \
+        unzip \
+        zip \
+        xz-utils \
+        procps \
+        sudo \
+        openssh-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# CI-friendly defaults. ACT=true mirrors what act injects, so workflows can detect it.
+ENV LANG=C.UTF-8 \
+    ACT=true
+
+# Fail the build early if the essentials aren't actually on PATH.
+RUN node --version && git --version && bash -c 'echo shell ok'
+
+CMD ["bash"]

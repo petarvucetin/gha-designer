@@ -1,0 +1,51 @@
+# Example: a workflow that uses GitHub Marketplace actions, runnable locally.
+#
+# Run it in the Designer with the VM engine:
+#   open this repo folder → click a step badge / Run ▶ → engine: VM → mode: self-hosted → start
+# act fetches each `uses:` action from github.com, then builds/runs it on the VM:
+#   - actions/checkout          (JavaScript action — checks the repo into the workspace)
+#   - actions/setup-node        (JavaScript action — installs/pins the requested Node)
+#   - actions/upload-artifact   (JavaScript action — stored by act's built-in artifact server)
+#   - actions/hello-world-docker-action  (Docker action — act builds its image and runs the container)
+#
+# Docker-based actions (like the greet job) run cleanly in *self-hosted* mode, where act uses the
+# VM's Docker directly. (In container mode they'd need Docker-in-Docker.)
+name: marketplace-example
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Show the tools the marketplace actions set up
+        run: |
+          node --version
+          git --version
+
+      - name: Produce a small build artifact
+        run: |
+          mkdir -p out
+          echo "built by the local VM runner at $(date -u)" > out/result.txt
+          cat out/result.txt
+
+      - name: Upload the build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: out/result.txt
+
+  greet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run a Docker-based marketplace action
+        uses: actions/hello-world-docker-action@main
+        with:
+          who-to-greet: gha-designer

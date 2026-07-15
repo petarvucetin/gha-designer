@@ -1,0 +1,15 @@
+{"level":"info","msg":"Using docker host 'npipe:////./pipe/docker_engine', and daemon socket 'npipe:////./pipe/docker_engine'","time":"2026-07-07T02:42:35-07:00"}
+{"dryrun":true,"job":"CI/build","jobID":"build","level":"info","matrix":{},"msg":"⭐ Run Set up job","step":"Set up job","stepid":["--setup-job"],"time":"2026-07-07T02:42:35-07:00"}
+{"dryrun":true,"job":"CI/build","jobID":"build","level":"info","matrix":{},"msg":"  🐳  docker pull image=node:20-bookworm-slim platform= username= forcePull=true","step":"Set up job","stepid":["--setup-job"],"time":"2026-07-07T02:42:35-07:00"}
+{"dryrun":true,"job":"CI/build","jobID":"build","level":"info","matrix":{},"msg":"  ✅  Success - Set up job","step":"Set up job","stepResult":"success","stepid":["--setup-job"],"time":"2026-07-07T02:42:35-07:00"}
+{"dryrun":true,"job":"CI/build  ","jobID":"build","level":"info","matrix":{},"msg":"⭐ Run Main Hello","stage":"Main","step":"Hello","stepID":["0"],"time":"2026-07-07T02:42:35-07:00"}
+{"dryrun":true,"job":"CI/build  ","jobID":"build","level":"info","matrix":{},"msg":"hello","raw_output":true,"stage":"Main","step":"Hello","stepID":["0"],"time":"2026-07-07T02:42:35-07:00"}
+{"dryrun":true,"job":"CI/build  ","jobID":"build","level":"info","matrix":{},"msg":"  ✅  Success - Main Hello","stage":"Main","step":"Hello","stepID":["0"],"stepResult":"success","time":"2026-07-07T02:42:35-07:00"}
+{"dryrun":true,"error":"repository does not exist","job":"CI/build  ","jobID":"build","level":"error","matrix":{},"msg":"unable to get git ref","stage":"Main","step":"Hello","stepID":["0"],"time":"2026-07-07T02:42:35-07:00"}
+{"dryrun":true,"error":"repository does not exist","job":"CI/build  ","jobID":"build","level":"error","matrix":{},"msg":"unable to get git ref","stage":"Main","step":"Hello","stepID":["0"],"time":"2026-07-07T02:42:35-07:00"}
+{"dryrun":true,"error":"repository does not exist","job":"CI/build  ","jobID":"build","level":"error","matrix":{},"msg":"unable to get git ref","stage":"Main","step":"Hello","stepID":["0"],"time":"2026-07-07T02:42:35-07:00"}
+{"dryrun":true,"job":"CI/build  ","jobID":"build","jobResult":"success","level":"info","matrix":{},"msg":"🏁  Job succeeded","time":"2026-07-07T02:42:35-07:00"}
+{"dryrun":true,"job":"CI/deploy  ","jobID":"deploy","level":"info","matrix":{},"msg":"⭐ Run Main deploy step","stage":"Main","step":"deploy step","stepID":["0"],"time":"2026-07-07T02:42:36-07:00"}
+{"dryrun":true,"job":"CI/deploy  ","jobID":"deploy","level":"error","matrix":{},"msg":"  ❌  Failure - Main deploy step","stage":"Main","step":"deploy step","stepID":["0"],"stepResult":"failure","time":"2026-07-07T02:42:36-07:00"}
+{"dryrun":true,"job":"CI/deploy  ","jobID":"deploy","jobResult":"failure","level":"error","matrix":{},"msg":"🏁  Job failed","time":"2026-07-07T02:42:36-07:00"}
+this line is not json at all — docker pull progress or stray output

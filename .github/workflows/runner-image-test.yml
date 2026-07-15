@@ -1,0 +1,35 @@
+name: Runner Image Test
+
+# Builds the Alpine local-act runner image with Podman and runs a container from it to
+# smoke-test that the tooling act depends on (bash, node, git) is present and working.
+# GitHub-hosted ubuntu-latest ships Podman, so this runs as-is on GitHub.
+
+on:
+  push:
+    paths:
+      - 'runner-image/**'
+      - '.github/workflows/runner-image-test.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Podman version
+        run: podman version
+
+      - name: Build the Alpine runner image with Podman
+        run: podman build -t act-runner-alpine:test -f runner-image/Containerfile.alpine runner-image
+
+      - name: Run Podman on the image — tooling smoke test
+        run: |
+          set -euo pipefail
+          echo "node:  $(podman run --rm act-runner-alpine:test node --version)"
+          echo "git:   $(podman run --rm act-runner-alpine:test git --version)"
+          podman run --rm act-runner-alpine:test bash -c 'echo "bash + shell OK"'
+
+      - name: Fail if bash is missing (the #1 act-on-Alpine gotcha)
+        run: podman run --rm act-runner-alpine:test bash -c 'command -v bash >/dev/null && echo "bash present"'
